@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Blog</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Create Blog Post</h2>
+  <input type="text" id="title" placeholder="Post Title">
+  <textarea id="desc" placeholder="Write something..."></textarea>
+
+  <label>Upload Image/Video/Audio</label>
+  <input type="file" id="media">
+
+  <label>Visibility</label>
+  <select id="visibility">
+    <option value="private">Private</option>
+    <option value="public">Public</option>
+  </select>
+
+  <button onclick="createPost()">Create Post</button>
+
+  <h3>My Posts</h3>
+  <div id="myPosts"></div>
+
+  <h3>Public Posts</h3>
+  <div id="publicPosts"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

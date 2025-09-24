@@ -1,0 +1,42 @@
+<script type="module">
+ 
+
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDqT5zeFffY24gmEUaD58XI-R3i9BiE51s",
+  authDomain: "blog-app-ce64d.firebaseapp.com",
+  projectId: "blog-app-ce64d",
+  storageBucket: "blog-app-ce64d.firebasestorage.app",
+  messagingSenderId: "795445924522",
+  appId: "1:795445924522:web:a6c5d25c3e986ec2beb6d3"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+
+</script>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login - Blog App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Login / Signup</h2>
+  <input type="text" id="name" placeholder="Name">
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="signup()">Signup</button>
+  <button onclick="login()">Login</button>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
