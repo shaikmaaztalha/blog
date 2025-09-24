@@ -1,99 +1,106 @@
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-
-import { 
-  addDoc, collection, getDocs, query, where 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-import { 
-  ref, uploadBytes, getDownloadURL 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
-
-const { auth, db, storage } = window.firebaseServices;
-
-// --- Signup ---
-window.signup = async function() {
+// Authentication
+function signup() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
   const name = document.getElementById("name").value;
+
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      return db.collection("users").doc(userCredential.user.uid).set({
+        name: name,
+        email: email
+      });
+    })
+    .then(() => {
+      alert("Signup successful!");
+      window.location = "dashboard.html";
+    })
+    .catch((error) => alert(error.message));
+}
+
+function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-  try {
-    const userCred = await createUserWithEmailAndPassword(auth, email, password);
-    alert("Signed up!");
-    localStorage.setItem("uid", userCred.user.uid);
-    window.location.href = "home.html";
-  } catch (e) {
-    alert(e.message);
-  }
-};
 
-// --- Login ---
-window.login = async function() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  try {
-    const userCred = await signInWithEmailAndPassword(auth, email, password);
-    alert("Logged in!");
-    localStorage.setItem("uid", userCred.user.uid);
-    window.location.href = "home.html";
-  } catch (e) {
-    alert(e.message);
-  }
-};
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      window.location = "dashboard.html";
+    })
+    .catch((error) => alert(error.message));
+}
 
-// --- Create Post ---
-window.createPost = async function() {
+// Blog Post Creation
+function createPost() {
   const title = document.getElementById("title").value;
-  const desc = document.getElementById("desc").value;
-  const file = document.getElementById("media").files[0];
-  const visibility = document.getElementById("visibility").value;
-  const uid = localStorage.getItem("uid");
+  const description = document.getElementById("description").value;
+  const isPublic = document.getElementById("isPublic").checked;
+  const mediaFile = document.getElementById("media").files[0];
+
+  const user = auth.currentUser;
+  if (!user) {
+    alert("Login first!");
+    return;
+  }
 
   let mediaUrl = "";
-  if (file) {
-    const fileRef = ref(storage, "uploads/" + Date.now() + "_" + file.name);
-    await uploadBytes(fileRef, file);
-    mediaUrl = await getDownloadURL(fileRef);
+
+  if (mediaFile) {
+    const storageRef = storage.ref("posts/" + Date.now() + "-" + mediaFile.name);
+    storageRef.put(mediaFile).then(snapshot => {
+      snapshot.ref.getDownloadURL().then(url => {
+        mediaUrl = url;
+        savePost(title, description, isPublic, mediaUrl, user.uid);
+      });
+    });
+  } else {
+    savePost(title, description, isPublic, mediaUrl, user.uid);
   }
+}
 
-  await addDoc(collection(db, "posts"), {
-    uid, title, desc, visibility, mediaUrl, createdAt: Date.now()
+function savePost(title, description, isPublic, mediaUrl, userId) {
+  db.collection("posts").add({
+    title: title,
+    description: description,
+    mediaUrl: mediaUrl,
+    isPublic: isPublic,
+    userId: userId,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then(() => {
+    alert("Post created!");
+    loadPosts();
   });
+}
 
-  alert("Post Created!");
-  window.location.reload();
-};
+// Load posts for logged-in user
+function loadPosts() {
+  const user = auth.currentUser;
+  if (!user) return;
 
-// --- Fetch Posts ---
-window.onload = async function() {
-  const uid = localStorage.getItem("uid");
-  if (!uid) return;
+  db.collection("posts").where("userId", "==", user.uid)
+    .orderBy("createdAt", "desc")
+    .get()
+    .then(snapshot => {
+      let html = "";
+      snapshot.forEach(doc => {
+        const post = doc.data();
+        html += `
+          <div class="post">
+            <h3>${post.title}</h3>
+            <p>${post.description}</p>
+            ${post.mediaUrl ? `<a href="${post.mediaUrl}" target="_blank">View Media</a>` : ""}
+            <p>Public: ${post.isPublic}</p>
+          </div>
+        `;
+      });
+      document.getElementById("posts").innerHTML = html;
+    });
+}
 
-  const q1 = query(collection(db, "posts"), where("uid", "==", uid));
-  const q2 = query(collection(db, "posts"), where("visibility", "==", "public"));
-
-  const myPostsSnap = await getDocs(q1);
-  const publicPostsSnap = await getDocs(q2);
-
-  const myPostsDiv = document.getElementById("myPosts");
-  const publicPostsDiv = document.getElementById("publicPosts");
-
-  myPostsSnap.forEach(doc => {
-    const p = doc.data();
-    myPostsDiv.innerHTML += `<div>
-      <h4>${p.title}</h4>
-      <p>${p.desc}</p>
-      ${p.mediaUrl ? `<a href="${p.mediaUrl}" target="_blank">View Media</a>` : ""}
-    </div>`;
+// Run loadPosts on dashboard load
+if (window.location.pathname.includes("dashboard.html")) {
+  auth.onAuthStateChanged(user => {
+    if (user) loadPosts();
+    else window.location = "index.html";
   });
-
-  publicPostsSnap.forEach(doc => {
-    const p = doc.data();
-    publicPostsDiv.innerHTML += `<div>
-      <h4>${p.title}</h4>
-      <p>${p.desc}</p>
-      ${p.mediaUrl ? `<a href="${p.mediaUrl}" target="_blank">View Media</a>` : ""}
-    </div>`;
-  });
-};
+}

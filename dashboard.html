@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Blog Login</title>
+  <title>Dashboard</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -10,12 +10,20 @@
   <script src="firebase-config.js"></script>
 </head>
 <body>
-  <h2>Login / Signup</h2>
-  <input type="text" id="name" placeholder="Name">
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="password" placeholder="Password">
-  <button onclick="signup()">Signup</button>
-  <button onclick="login()">Login</button>
+  <h2>Create Blog Post</h2>
+  <input type="text" id="title" placeholder="Title"><br>
+  <textarea id="description" placeholder="Write something..."></textarea><br>
+  
+  <label>Upload Image/Video/Audio:</label>
+  <input type="file" id="media"><br>
+  
+  <label>Make Public?</label>
+  <input type="checkbox" id="isPublic"><br>
+  
+  <button onclick="createPost()">Create Post</button>
+
+  <h2>My Posts</h2>
+  <div id="posts"></div>
 
   <script src="app.js"></script>
 </body>
