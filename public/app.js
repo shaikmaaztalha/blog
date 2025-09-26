@@ -20,7 +20,11 @@ function signup() {
       alert("Signup successful!");
       window.location = "dashboard.html";
     })
-    .catch((error) => alert(error.message));
+   .catch((error) => {
+  console.error("Signup error:", error);
+  alert(error.message);
+});
+
 }
 
 function login() {
