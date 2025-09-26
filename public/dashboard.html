@@ -10,6 +10,18 @@
   <script src="firebase-config.js"></script>
 </head>
 <body>
+  <body>
+  <header>
+    <div id="userProfile">
+      <span id="userEmail"></span>
+      <button onclick="logout()">Logout</button>
+    </div>
+    <nav>
+      <button onclick="showMyPosts()">My Reflections</button>
+      <button onclick="showDiscover()">Discover</button>
+    </nav>
+  </header>
+
   <h2>Create Blog Post</h2>
   <input type="text" id="title" placeholder="Title"><br>
   <textarea id="description" placeholder="Write something..."></textarea><br>
