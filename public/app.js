@@ -1,9 +1,4 @@
-// Authentication
-
-
-
-
-
+// -------- Signup --------
 function signup() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -22,7 +17,7 @@ function signup() {
     .catch((error) => alert(error.message));
 }
 
-
+// -------- Login --------
 function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -34,7 +29,7 @@ function login() {
     .catch((error) => alert(error.message));
 }
 
-// Blog Post Creation
+// -------- Create Blog Post --------
 function createPost() {
   const title = document.getElementById("title").value;
   const description = document.getElementById("description").value;
@@ -73,63 +68,11 @@ function savePost(title, description, isPublic, mediaUrl, userId) {
   })
   .then(() => {
     alert("Post created!");
-    loadPosts();
+    showMyPosts(); // refresh my posts immediately
   });
 }
 
-// Load posts for logged-in user
-function loadPosts() {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  db.collection("posts").where("userId", "==", user.uid)
-    .orderBy("createdAt", "desc")
-    .get()
-    .then(snapshot => {
-      let html = "";
-      snapshot.forEach(doc => {
-        const post = doc.data();
-        html += `
-          <div class="post">
-            <h3>${post.title}</h3>
-            <p>${post.description}</p>
-            ${post.mediaUrl ? `<a href="${post.mediaUrl}" target="_blank">View Media</a>` : ""}
-            <p>Public: ${post.isPublic}</p>
-          </div>
-        `;
-      });
-      document.getElementById("posts").innerHTML = html;
-    });
-}
-
-// Run loadPosts on dashboard load
-if (window.location.pathname.includes("dashboard.html")) {
-  auth.onAuthStateChanged(user => {
-    if (user) loadPosts();
-    else window.location = "index.html";
-  });
-}
-
-// Logout
-function logout() {
-  auth.signOut().then(() => {
-    window.location = "index.html";
-  });
-}
-
-// Show email on profile
-if (window.location.pathname.includes("dashboard.html")) {
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      document.getElementById("userEmail").innerText = user.email;
-      loadPosts(); // default: show my posts
-    } else {
-      window.location = "index.html";
-    }
-  });
-}
-
-
+// -------- Load My Posts --------
 function showMyPosts() {
   const user = auth.currentUser;
   if (!user) return;
@@ -142,25 +85,53 @@ function showMyPosts() {
     });
 }
 
+// -------- Load Discover Posts --------
+// -------- Real-time Discover Feed --------
+let discoverUnsubscribe = null; // store unsubscribe function to stop listening if needed
+
 function showDiscover() {
   const user = auth.currentUser;
   if (!user) return;
 
-  db.collection("posts")
+  // If we already have a listener, detach it before creating a new one
+  if (discoverUnsubscribe) {
+    discoverUnsubscribe();
+  }
+
+  // Firestore query: all public posts ordered by createdAt descending
+  const query = db.collection("posts")
     .where("isPublic", "==", true)
-    .orderBy("createdAt", "desc")
-    .get()
-    .then(snapshot => {
-      // Filter out my own public posts
-      const docs = snapshot.docs.filter(doc => doc.data().userId !== user.uid);
-      renderPosts({ docs }, "posts");
+    .orderBy("createdAt", "desc");
+
+  // Listen in real-time
+  discoverUnsubscribe = query.onSnapshot(snapshot => {
+    // Filter out the current user's posts
+    const filteredDocs = snapshot.docs.filter(doc => doc.data().userId !== user.uid);
+
+    let html = "";
+    filteredDocs.forEach(doc => {
+      const post = doc.data();
+      html += `
+        <div class="post">
+          <h3>${post.title}</h3>
+          <p>${post.description}</p>
+          ${post.mediaUrl ? `<a href="${post.mediaUrl}" target="_blank">View Media</a>` : ""}
+          <p>Public: ${post.isPublic}</p>
+        </div>
+      `;
     });
+
+    document.getElementById("posts").innerHTML = html || "<p>No public posts yet.</p>";
+  }, error => {
+    console.error("Error loading discover feed:", error);
+  });
 }
 
-// helper
+
+// -------- Helper: Render Posts --------
 function renderPosts(snapshot, containerId) {
   let html = "";
-  snapshot.docs.forEach(doc => {
+  snapshot.forEach(doc => {
     const post = doc.data();
     html += `
       <div class="post">
@@ -174,3 +145,21 @@ function renderPosts(snapshot, containerId) {
   document.getElementById(containerId).innerHTML = html || "<p>No posts found.</p>";
 }
 
+// -------- Logout --------
+function logout() {
+  auth.signOut().then(() => {
+    window.location = "index.html";
+  });
+}
+
+// -------- Auth State Listener --------
+if (window.location.pathname.includes("dashboard.html")) {
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("userEmail").innerText = user.email;
+      showMyPosts(); // default: show my posts on load
+    } else {
+      window.location = "index.html";
+    }
+  });
+}
