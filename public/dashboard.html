@@ -8,21 +8,137 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
   <script src="firebase-config.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #030112;
+      padding: 10px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #userProfile {
+      display: flex;
+      align-items: center;
+    }
+    #userEmail {
+      margin-right: 10px;
+      color: white;
+    }
+    nav button {
+      margin: 0 5px;
+      padding: 10px 15px;
+      background-color: #6200ea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    nav button:hover {
+      background-color: #3700b3;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid gray;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #6200ea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #3700b3;
+    }
+    #posts {
+      margin-top: 20px;
+    }
+    .post {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: rgb(255, 255, 255);
+      cursor: pointer;
+    }
+    .post h3 {
+      margin: 0 0 10px 0;
+    }
+    .post p {
+      margin: 0 0 10px 0;
+      white-space: pre-wrap; /* preserve line breaks */
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 3; /* show 3 lines preview */
+      -webkit-box-orient: vertical;
+    }
+    #title {
+      color: rgb(233, 227, 227);
+      background-color: #1e1e2f;
+      font-weight: bold;
+    }
+    #description {
+      background-color: #1e1e2f;
+      color: rgb(233, 227, 227);
+    }
+
+    /* Full Post Modal */
+    #postModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+    }
+    #postModalContent {
+      background: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 700px;
+    }
+    #closeModal {
+      float: right;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #modalDescription {
+      white-space: pre-wrap; /* preserve newlines */
+    }
+    #modalMedia img, #modalMedia video, #modalMedia audio {
+      max-width: 100%;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <body>
-  <header>
-    <div id="userProfile">
-      <span id="userEmail"></span>
-      <button onclick="logout()">Logout</button>
-    </div>
-    <nav>
-      <button onclick="showMyPosts()">My Reflections</button>
-      <button onclick="showDiscover()">Discover</button>
-    </nav>
-  </header>
+ <header>
+  <div id="userProfile">
+    <span id="userEmail"></span>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <nav>
+    <h2 style="color:white; margin:0;">My Reflections</h2>
+    <button id="openPostFormBtn" style="margin-left:auto;">+ Create Reflection</button>
+  </nav>
+</header>
 
-  <h2>Create Blog Post</h2>
+<!-- Create Post Form (hidden by default) -->
+<div id="createPostForm" style="display:none; margin-top:20px;">
   <input type="text" id="title" placeholder="Title"><br>
   <textarea id="description" placeholder="Write something..."></textarea><br>
   
@@ -32,10 +148,23 @@
   <label>Make Public?</label>
   <input type="checkbox" id="isPublic"><br>
   
-  <button onclick="createPost()">Create Post</button>
+  <button onclick="createPost()">Create Reflection</button>
+</div>
 
-  <h2>My Posts</h2>
+<!-- Posts Section -->
+<div id="posts" style="margin-top:20px;"></div>
+
   <div id="posts"></div>
+
+  <!-- Full Post Modal -->
+  <div id="postModal">
+    <div id="postModalContent">
+      <span id="closeModal" onclick="closeModal()">&times;</span>
+      <h3 id="modalTitle"></h3>
+      <p id="modalDescription"></p>
+      <div id="modalMedia"></div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

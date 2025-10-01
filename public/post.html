@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title id="postTitle">Blog Post</title>
+  <meta name="description" id="metaDescription" content="Blog post content">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <header>
+    <a href="dashboard.html">⬅ Back</a>
+  </header>
+
+  <main>
+    <h1 id="postHeading"></h1>
+    <p id="postDescription"></p>
+    <div id="postMedia"></div>
+  </main>
+
+  <script src="post.js"></script>
+</body>
+</html>

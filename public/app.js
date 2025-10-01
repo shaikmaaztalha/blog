@@ -5,16 +5,13 @@ function signup() {
 
   auth.createUserWithEmailAndPassword(email, password)
     .then((userCredential) => {
-      // Save only email in Firestore
-      return db.collection("users").doc(userCredential.user.uid).set({
-        email: email
-      });
+      return db.collection("users").doc(userCredential.user.uid).set({ email });
     })
     .then(() => {
       alert("Signup successful!");
       window.location = "dashboard.html";
     })
-    .catch((error) => alert(error.message));
+    .catch(error => alert(error.message));
 }
 
 // -------- Login --------
@@ -23,16 +20,14 @@ function login() {
   const password = document.getElementById("password").value;
 
   auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
-      window.location = "dashboard.html";
-    })
-    .catch((error) => alert(error.message));
+    .then(() => window.location = "dashboard.html")
+    .catch(error => alert(error.message));
 }
 
 // -------- Create Blog Post --------
 function createPost() {
-  const title = document.getElementById("title").value;
-  const description = document.getElementById("description").value;
+  const title = document.getElementById("title").value.trim();
+  const description = document.getElementById("description").value.trim();
   const isPublic = document.getElementById("isPublic").checked;
   const mediaFile = document.getElementById("media").files[0];
 
@@ -59,16 +54,16 @@ function createPost() {
 
 function savePost(title, description, isPublic, mediaUrl, userId) {
   db.collection("posts").add({
-    title: title,
-    description: description,
-    mediaUrl: mediaUrl,
-    isPublic: isPublic,
-    userId: userId,
+    title,
+    description,
+    mediaUrl,
+    isPublic,
+    userId,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   })
   .then(() => {
     alert("Post created!");
-    showMyPosts(); // refresh my posts immediately
+    showMyPosts();
   });
 }
 
@@ -77,79 +72,92 @@ function showMyPosts() {
   const user = auth.currentUser;
   if (!user) return;
 
-  db.collection("posts").where("userId", "==", user.uid)
+  document.getElementById("postSectionTitle").innerText = "My Posts";
+
+  db.collection("posts")
+    .where("userId", "==", user.uid)
     .orderBy("createdAt", "desc")
     .get()
-    .then(snapshot => {
-      renderPosts(snapshot, "posts");
-    });
+    .then(snapshot => renderPosts(snapshot, "posts"));
 }
 
-// -------- Load Discover Posts --------
-// -------- Real-time Discover Feed --------
-let discoverUnsubscribe = null; // store unsubscribe function to stop listening if needed
+// -------- Load Discover Posts (Realtime) --------
+let discoverUnsubscribe = null;
 
 function showDiscover() {
   const user = auth.currentUser;
   if (!user) return;
 
-  // If we already have a listener, detach it before creating a new one
-  if (discoverUnsubscribe) {
-    discoverUnsubscribe();
-  }
+  document.getElementById("postSectionTitle").innerText = "Discover";
 
-  // Firestore query: all public posts ordered by createdAt descending
+  if (discoverUnsubscribe) discoverUnsubscribe();
+
   const query = db.collection("posts")
     .where("isPublic", "==", true)
     .orderBy("createdAt", "desc");
 
-  // Listen in real-time
   discoverUnsubscribe = query.onSnapshot(snapshot => {
-    // Filter out the current user's posts
     const filteredDocs = snapshot.docs.filter(doc => doc.data().userId !== user.uid);
-
-    let html = "";
-    filteredDocs.forEach(doc => {
-      const post = doc.data();
-      html += `
-        <div class="post">
-          <h3>${post.title}</h3>
-          <p>${post.description}</p>
-          ${post.mediaUrl ? `<a href="${post.mediaUrl}" target="_blank">View Media</a>` : ""}
-          <p>Public: ${post.isPublic}</p>
-        </div>
-      `;
-    });
-
-    document.getElementById("posts").innerHTML = html || "<p>No public posts yet.</p>";
-  }, error => {
-    console.error("Error loading discover feed:", error);
-  });
+    renderPosts(filteredDocs, "posts", true);
+  }, error => console.error("Error loading discover feed:", error));
 }
 
-
-// -------- Helper: Render Posts --------
-function renderPosts(snapshot, containerId) {
+function renderPosts(snapshot, containerId, isDocsArray = false) {
   let html = "";
-  snapshot.forEach(doc => {
+  const docs = isDocsArray ? snapshot : snapshot.docs;
+
+  docs.forEach(doc => {
     const post = doc.data();
+    const id = doc.id; // Firestore document ID
+
     html += `
       <div class="post">
-        <h3>${post.title}</h3>
-        <p>${post.description}</p>
-        ${post.mediaUrl ? `<a href="${post.mediaUrl}" target="_blank">View Media</a>` : ""}
-        <p>Public: ${post.isPublic}</p>
+        <h3><a href="post.html?id=${id}">${post.title}</a></h3>
+        <p>${post.description.substring(0, 100)}...</p>
       </div>
     `;
   });
+
   document.getElementById(containerId).innerHTML = html || "<p>No posts found.</p>";
+}
+
+
+// -------- Open Post in New Page --------
+function openPostPage(postId) {
+  window.location = `post.html?id=${postId}`;
+}
+
+
+// -------- Full Post Modal --------
+function openPostModal(postStr) {
+  const post = JSON.parse(unescapeHtml(postStr));
+  document.getElementById("modalTitle").innerText = post.title;
+  document.getElementById("modalDescription").innerText = post.description;
+
+  let mediaHtml = "";
+  if (post.mediaUrl) {
+    if (post.mediaUrl.match(/\.(jpg|jpeg|png|gif)$/i)) {
+      mediaHtml = `<img src="${post.mediaUrl}" alt="Image">`;
+    } else if (post.mediaUrl.match(/\.(mp4|webm)$/i)) {
+      mediaHtml = `<video controls src="${post.mediaUrl}"></video>`;
+    } else if (post.mediaUrl.match(/\.(mp3|wav)$/i)) {
+      mediaHtml = `<audio controls src="${post.mediaUrl}"></audio>`;
+    } else {
+      mediaHtml = `<a href="${post.mediaUrl}" target="_blank">View Media</a>`;
+    }
+  }
+  document.getElementById("modalMedia").innerHTML = mediaHtml;
+
+  document.getElementById("postModal").style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("postModal").style.display = "none";
 }
 
 // -------- Logout --------
 function logout() {
-  auth.signOut().then(() => {
-    window.location = "index.html";
-  });
+  auth.signOut().then(() => window.location = "index.html");
 }
 
 // -------- Auth State Listener --------
@@ -157,9 +165,17 @@ if (window.location.pathname.includes("dashboard.html")) {
   auth.onAuthStateChanged(user => {
     if (user) {
       document.getElementById("userEmail").innerText = user.email;
-      showMyPosts(); // default: show my posts on load
+      showMyPosts();
     } else {
       window.location = "index.html";
     }
   });
+}
+
+// -------- Helpers --------
+function escapeHtml(text) {
+  return text.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+function unescapeHtml(text) {
+  return text.replace(/&quot;/g, '"').replace(/&#039;/g, "'");
 }
